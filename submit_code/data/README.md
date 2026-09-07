@@ -1,147 +1,143 @@
 # Selective Compliance in Financial Rule Reasoning: A Solver-Verified Chinese Benchmark and Empirical Analysis
 
-## English Description
+## Dataset Overview
 
 This directory contains the evaluation data used in Table 2 of the paper. The benchmark is derived from Chinese financial examination questions and augments each question with solver-verified synthetic rule interventions. It evaluates whether a language model follows an applicable, answer-changing conflict rule while resisting an inapplicable supplement rule.
 
-The data are organized into three settings: Clean, Noisy, and Multi-Hop. The three JSONL files contain 319 records in total: 126 Clean records, 126 Noisy records, and 67 Multi-Hop records. Clean and Multi-Hop each evaluate both conflict and supplement interventions, whereas Noisy evaluates conflict interventions only. Consequently, the 319 JSONL records correspond to 512 evaluation instances reported in the paper. Each JSONL line is an independent UTF-8 encoded JSON object containing the source question, answer choices, original answer, executable logical backbone, synthesized interventions, expected answers, and verification metadata.
+The files use UTF-8 encoded JSONL format, with one independent JSON object per line.
 
-## Dataset README
+## Files and Dataset Size
 
-本目录包含论文 Table 2 使用的三个评测数据文件。文件采用 UTF-8 编码的 JSONL 格式，每行是一个独立 JSON 对象。
-
-## 文件与规模
-
-| 文件 | 实验设置 | JSONL 记录数 | Conflict 实例 | Supplement 实例 | Table 2 实例数 |
+| File | Setting | JSONL records | Conflict instances | Supplement instances | Table 2 instances |
 |---|---|---:|---:|---:|---:|
 | `clean.jsonl` | Clean | 126 | 126 | 126 | 252 |
 | `noisy.jsonl` | Noisy | 126 | 126 | 0 | 126 |
 | `multi_hop.jsonl` | Multi-Hop | 67 | 67 | 67 | 134 |
 | **All** | — | **319** | **319** | **193** | **512** |
 
-这里的“JSONL 记录数”和 Table 2 的“实例数”含义不同。每条 JSON 记录在统一的数据结构中保存同一道题的两个候选评测条件：
+The number of JSONL records differs from the number of evaluation instances reported in Table 2. For structural consistency, each JSONL record stores two candidate evaluation conditions for the same source question:
 
-1. 一个适用于题目的 **conflict** 规则，用于计算 Obedience Rate（OR）；
-2. 一个不适用于题目的 **supplement / ID** 规则，用于计算 Resistance Rate（RR）。
+1. An applicable **conflict** rule used to compute Obedience Rate (OR).
+2. An inapplicable **supplement / ID** rule used to compute Resistance Rate (RR).
 
-Clean 和 Multi-Hop 的每条记录均产生一个 conflict 实例和一个 supplement 实例。Noisy 只评测 conflict intervention；`noisy.jsonl` 中保留的 `conditions.supp` 仅用于维持三个文件的数据结构一致，不计入论文的 RR、FR 或 Table 2 实例数。因此，319 条 JSONL 记录对应论文中的 512 个评测实例：
+Each Clean and Multi-Hop record produces one conflict instance and one supplement instance. The Noisy setting evaluates conflict interventions only. The `conditions.supp` field remains in `noisy.jsonl` to preserve a consistent schema across the three files, but it is excluded from the paper's RR, FR, and Table 2 instance counts. Therefore, the 319 JSONL records correspond to 512 evaluation instances:
 
 ```text
 126 × 2 (Clean) + 126 × 1 (Noisy) + 67 × 2 (Multi-Hop) = 512
 ```
 
-计入 supplement 评测的 Clean 和 Multi-Hop 记录均满足 `conditions.supp.strategy == "S2"`，对应 ID（Inapplicable Distractor）。
+All Clean and Multi-Hop supplement conditions included in the evaluation satisfy `conditions.supp.strategy == "S2"`, corresponding to ID (Inapplicable Distractor).
 
-## 顶层字段
+## Top-Level Fields
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `id` | string | 样本唯一标识，例如 `cflue_0166`。同一基础题在不同实验设置中通常沿用相同 ID。 |
-| `source` | string | 原始题目来源；当前数据均为 `cflue`。 |
-| `subject` | string | 考试科目或专业领域。 |
-| `task` | string | 题型，当前包括 `单项选择题` 和 `判断题`。 |
-| `question` | string | 原始问题文本。 |
-| `choices` | object | 选项字典，键为选项字母，值为选项文本。单项选择题通常有 A–D，判断题通常有 A–B。 |
-| `answer_orig` | string | 不使用适用冲突规则时的原始正确答案，也是 supplement/ID 条件的期望答案。 |
-| `backbone` | object | 将原题表示为事实、参数和推导步骤的结构化逻辑骨架。 |
-| `intervention` | object | conflict 规则所实施的参数修改及推理跳数标注。 |
-| `conditions` | object | 同一基础题对应的 conflict 和 supplement 两个外部规则条件。 |
-| `closed_book_pass` | boolean | 样本是否通过闭卷知识稳定性筛选。当前提交数据中均为 `true`。 |
-| `checks` | object | 数据构造和验证阶段留下的质量检查字段。 |
+| `id` | string | Unique sample identifier, such as `cflue_0166`. The same source question generally retains the same ID across settings. |
+| `source` | string | Source dataset. All current records use `cflue`. |
+| `subject` | string | Examination subject or financial domain. |
+| `task` | string | Question type. Current values include single-choice questions (`单项选择题`) and true/false questions (`判断题`). |
+| `question` | string | Original question text. |
+| `choices` | object | Mapping from option letters to option text. Single-choice questions generally use A–D, while true/false questions generally use A–B. |
+| `answer_orig` | string | Original correct answer without an applicable conflict rule. It is also the expected answer under the supplement/ID condition. |
+| `backbone` | object | Structured logical representation of the source question, including facts, parameters, and derivation steps. |
+| `intervention` | object | Parameter modifications used to construct the conflict rule, together with reasoning-depth annotations. |
+| `conditions` | object | Conflict and supplement contextual-rule conditions associated with the same source question. |
+| `closed_book_pass` | boolean | Whether the record passed the closed-book knowledge-stability filter. All submitted records are `true`. |
+| `checks` | object | Quality-control metadata produced during construction and verification. |
 
-## `backbone`：逻辑骨架
+## `backbone`: Logical Representation
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `backbone.feasible` | boolean | 原题是否可被当前结构化骨架表达。 |
-| `backbone.facts` | object | 从题目抽取的事实变量。键名和取值类型随题目而变化。 |
-| `backbone.params` | array<object> | 原规则参数列表。每个元素包含下表所列字段。 |
-| `backbone.derivation` | array<object> | 从事实和参数到中间变量的推导步骤；少数样本可以为空数组。 |
-| `backbone.choice_logic` | object | 选项字母到逻辑判定表达式的映射。 |
+| `backbone.feasible` | boolean | Whether the source question can be represented by the structured logical backbone. |
+| `backbone.facts` | object | Facts extracted from the question. Keys and value types vary by question. |
+| `backbone.params` | array<object> | Original rule parameters. Each entry contains the fields described below. |
+| `backbone.derivation` | array<object> | Derivation steps from facts and parameters to intermediate variables. This array may be empty for a small number of records. |
+| `backbone.choice_logic` | object | Mapping from answer-option letters to logical decision expressions. |
 
 ### `backbone.params[]`
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `name` | string | 参数变量名。 |
-| `value` | string / number / boolean / array | 原规则中的参数值。 |
-| `desc` | string | 参数的自然语言说明。 |
-| `law` | string | 参数对应的法规、准则或知识来源说明。 |
-| `interventable` | boolean | 该参数是否被标记为可干预。 |
+| `name` | string | Parameter variable name. |
+| `value` | string / number / boolean / array | Original parameter value. |
+| `desc` | string | Natural-language description of the parameter. |
+| `law` | string | Description of the regulation, rule, or knowledge source associated with the parameter. |
+| `interventable` | boolean | Whether the parameter is eligible for intervention. |
 
 ### `backbone.derivation[]`
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `var` | string | 推导得到的中间变量名。 |
-| `expr` | string | 使用事实、参数或其他中间变量表示的逻辑表达式。 |
-| `desc` | string | 该推导步骤的自然语言说明。 |
+| `var` | string | Intermediate variable produced by the derivation step. |
+| `expr` | string | Logical expression defined over facts, parameters, or other intermediate variables. |
+| `desc` | string | Natural-language description of the derivation step. |
 
-`facts`、`params`、`derivation` 和 `choice_logic` 是用于数据构造与审计的形式化信息。运行论文方法时，模型的主要输入仍是题目、选项和相应条件下的规则文本。
+The `facts`, `params`, `derivation`, and `choice_logic` fields support data construction and auditing. During model evaluation, the primary inputs remain the question, answer choices, and contextual rule for the selected condition.
 
-## `intervention`：冲突规则修改
+## `intervention`: Conflict-Rule Modification
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `intervention.strategy` | string | 原始构造策略标签，当前可能为 `C1`、`C2`、`C4` 或 `C5`。 |
-| `intervention.hops` | integer | 构造阶段记录的规则修改到最终判断之间的推理跳数。 |
-| `intervention.param_updates` | object | 参数名到新表达式的映射。值以字符串保存，可能是常量，也可能是类似 Python 条件表达式的形式化表达式。 |
+| `intervention.strategy` | string | Original construction-strategy label. Current values may include `C1`, `C2`, `C4`, and `C5`. |
+| `intervention.hops` | integer | Recorded dependency distance from the rule modification to the final decision. |
+| `intervention.param_updates` | object | Mapping from parameter names to updated expressions. Values are stored as strings and may be constants or conditional expressions resembling Python syntax. |
 
-Table 2 使用的展示类型并不总是直接等于原始 `strategy`：
+The intervention types displayed in Table 2 do not always correspond directly to the original `strategy` value:
 
-| 原始构造标签 | Table 2 类型 | 映射规则 |
+| Original label | Table 2 type | Mapping rule |
 |---|---|---|
 | `C1` | CR | Constant Replacement |
 | `C2` | CB | Conditional Branching |
 | `C4` | EI | Exception Insertion |
-| `C5` | CR 或 CB | 若任一 `param_updates` 表达式包含条件表达式（AST `IfExp`，通常写作 `x if condition else y`），映射为 CB；否则映射为 CR。 |
+| `C5` | CR or CB | Mapped to CB if any `param_updates` expression contains a conditional AST `IfExp`, generally written as `x if condition else y`; otherwise mapped to CR. |
 
-`param_updates` 是数据标注，不应直接对不可信数据调用 `eval()`。
+`param_updates` contains annotations and must not be passed directly to `eval()` when processing untrusted data.
 
-## `conditions`：配对评测条件
+## `conditions`: Paired Evaluation Conditions
 
 ### `conditions.conflict`
 
-Conflict 规则适用于当前题目，并改变相关规则参数。模型在该条件下应遵从外部规则并给出新答案。
+The conflict rule applies to the current question and modifies a relevant rule parameter. Under this condition, the model should follow the contextual rule and produce the updated answer.
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `text` | string | 提供给模型的 conflict 外部规则文本。 |
-| `answer_new` | string | 应用 conflict 规则后的期望答案，用于计算 OR。 |
-| `variants` | object | conflict 规则的辅助文本变体。 |
-| `buried` | boolean，可选 | 仅在 `noisy.jsonl` 中出现，当前均为 `true`，表示目标规则位于 Noisy/Buried 呈现设置中。 |
+| `text` | string | Conflict contextual-rule text provided to the model. |
+| `answer_new` | string | Expected answer after applying the conflict rule, used to compute OR. |
+| `variants` | object | Auxiliary textual variants of the conflict rule. |
+| `buried` | boolean, optional | Appears only in `noisy.jsonl`. All current values are `true`, indicating that the target rule is embedded in a Noisy/Buried presentation. |
 
-`variants` 的子字段：
+The `variants` object may contain:
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `hypothetical` | string | 以假设形式表达规则修改。 |
-| `contrast` | string | 对比原规则与新规则的表述。 |
-| `paraphrases` | array<string>，可选 | conflict 规则的改写版本；部分 Multi-Hop 记录不含该字段，也可能为空数组。 |
+| `hypothetical` | string | Rule modification expressed as a hypothetical condition. |
+| `contrast` | string | Contrastive statement of the original and updated rules. |
+| `paraphrases` | array<string>, optional | Paraphrases of the conflict rule. Some Multi-Hop records omit this field or contain an empty array. |
 
 ### `conditions.supp`
 
-Supplement 规则与当前题目主题相关，但其适用前提不满足当前题目；模型应抵抗该规则的干扰并保持原答案。论文仅在 Clean 和 Multi-Hop 设置中评测该条件；Noisy 记录中的该字段不参与论文指标计算。
+The supplement rule is topically related to the source question, but its activation condition is not satisfied. The model should resist the distractor and retain the original answer. The paper evaluates this condition only in the Clean and Multi-Hop settings; the corresponding field in Noisy records is excluded from all reported metrics.
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `strategy` | string | Supplement 构造策略；三个提交文件中均为 `S2`。其中只有 Clean 和 Multi-Hop 的该条件计入 Table 2 的 ID。 |
-| `text` | string | 提供给模型的 inapplicable distractor 规则文本。 |
-| `target_distractor` | string | 该干扰规则试图诱导的选项，仅用于构造与诊断；它不是 supplement 条件的正确答案。 |
+| `strategy` | string | Supplement construction strategy. All three submitted files use `S2`; only the Clean and Multi-Hop conditions contribute to the ID counts in Table 2. |
+| `text` | string | Inapplicable distractor rule provided to the model. |
+| `target_distractor` | string | Option that the distractor attempts to induce. It is used only during construction and diagnosis and is not the correct answer under the supplement condition. |
 
-## `checks`：质量检查
+## `checks`: Quality-Control Metadata
 
-| 字段 | 类型 | 描述 |
+| Field | Type | Description |
 |---|---|---|
-| `roundtrip` | boolean | 结构化骨架与题目/答案是否通过回译一致性检查。 |
-| `blind_verify` | string | 构造阶段记录的盲审验证模式标签，当前值为 `single` 或 `dual`。 |
-| `supp_verify` | boolean | Supplement 规则是否通过不适用性验证。 |
+| `roundtrip` | boolean | Whether the structured backbone reproduces the original question answer through round-trip solving. |
+| `blind_verify` | string | Blind-verification mode recorded during construction. Current values are `single` or `dual`. |
+| `supp_verify` | boolean | Whether the supplement rule passed the inapplicability verification. |
 
-当前提交数据中 `roundtrip` 和 `supp_verify` 均为 `true`。
+All submitted records have `roundtrip == true` and `supp_verify == true`.
 
-## 评测标签
+## Evaluation Labels
 
-对 Clean 和 Multi-Hop 记录分别运行两个条件；对 Noisy 记录只运行 conflict 条件。期望标签如下：
+Run both conditions for Clean and Multi-Hop records, but run only the conflict condition for Noisy records. The expected labels are obtained as follows:
 
 ```python
 conflict_rule = item["conditions"]["conflict"]["text"]
@@ -151,11 +147,11 @@ supplement_rule = item["conditions"]["supp"]["text"]
 supplement_expected = item["answer_orig"]
 ```
 
-- OR：模型在 conflict 条件下预测 `answer_new` 的准确率。
-- RR：模型在 Clean 和 Multi-Hop 的 supplement/ID 条件下保持 `answer_orig` 的准确率；Noisy RR 不定义。
-- FR：OR 与 RR 的调和平均数；由于 Noisy RR 不定义，Noisy FR 也不定义。
+- **OR:** Accuracy against `answer_new` under the conflict condition.
+- **RR:** Accuracy in retaining `answer_orig` under the supplement/ID condition for Clean and Multi-Hop. Noisy RR is undefined.
+- **FR:** Harmonic mean of OR and RR. Because Noisy RR is undefined, Noisy FR is also undefined.
 
-## 读取示例
+## Loading Example
 
 ```python
 import json
@@ -171,4 +167,4 @@ print(records[0]["conditions"]["conflict"]["text"])
 print(records[0]["conditions"]["supp"]["text"])
 ```
 
-三个文件已经规范化为严格的一行一个 JSON 对象，可直接由 `submit_code/methods.py` 的 `run` 子命令读取。
+All three files use strict one-object-per-line JSONL formatting and can be loaded directly by the `run` subcommand in `submit_code/methods.py`.
